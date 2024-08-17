@@ -13,11 +13,11 @@ struct node *head, *tail, *ptr, *prev, *p;
 void insert () {
 	p = (struct node*)malloc(sizeof(struct node));
 	
-	printf ("Enter directory name: ");
-	scanf (" %s", p->dname);
+	printf("Enter directory name: ");
+	scanf(" %s", p->dname);
 	
-	printf ("Enter file name: ");
-	scanf (" %s", p->fname);
+	printf("Enter file name: ");
+	scanf(" %s", p->fname);
 	p->next = NULL;
 	
 	if (head == NULL) {
@@ -26,22 +26,20 @@ void insert () {
 	} else {
 		ptr = head;
 		while (ptr != NULL) {
-			if (strcmp(ptr->dname,p->dname) == 0) {
-				if (strcmp(ptr->fname, p->fname) == 0) 
-					{ printf ("no duplicates, terminated\n");
-				      free(p); }
-				else 
-					{ tail->next = p; tail = p; }
-			} else {
-				ptr = ptr->next;
+			if (strcmp(ptr->dname, p->dname) == 0 && strcmp(ptr->fname, p->fname) == 0) {
+				printf("No duplicates, terminated...\n");
+				free(p);
+				return;
 			}
-		} 
-		//tail->next = p;
-		//tail = p;
+			ptr = ptr->next;
+		}
+		tail->next = p;
+		tail = p;
 	}
 	
-	printf ("File entered successfully...\n");
+	printf("File entered successfully...\n");
 }
+
 
 void display () {
 	char dir[20];
@@ -53,12 +51,13 @@ void display () {
 		scanf (" %s", dir);
 		while (ptr != NULL) {
 			if (strcmp(dir, ptr->dname) == 0) {
-				printf ("%s|%s ", ptr->dname, ptr->fname);
+				printf ("%s|%s   ", ptr->dname, ptr->fname);
 				ptr = ptr->next;
 			} else {
 				ptr = ptr->next;
 			}
 		}
+		printf("\n");
 	}
 }
 
