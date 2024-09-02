@@ -6,7 +6,7 @@
 struct node {
     char name[30];
     int blocks;
-    int allocatedBlocks[20];
+    int allocatedBlocks[20];  // Adjust size if needed
     struct node *next;
 };
 struct node *head, *tail, *ptr, *p;
@@ -31,10 +31,11 @@ void allocateFile(int totalBlocks, int status[]) {
         return;
     }
 
-    int allocated = 0;
+    int allocated = 0, index = 0;
     for (int i = 0; i < totalBlocks && allocated < p->blocks; i++) {
         if (status[i] == 0) {
-            if (rand() % (totalBlocks - i) < p->blocks - allocated) {
+            index = rand() % (totalBlocks-1);
+            if (index != p->blocks - allocated) {
                 p->allocatedBlocks[allocated] = i;
                 status[i] = 1;
                 allocated++;
@@ -51,7 +52,7 @@ void allocateFile(int totalBlocks, int status[]) {
         tail = p;
     }
 
-    printf("\tFile %s has been allocated.\n", p->name);
+    printf("\tFile %s has been allocated with index %d.\n", p->name, index);
     printf("\tBlocks allocated: ");
     for (int i = 0; i < allocated; i++) {
         printf("%d ", p->allocatedBlocks[i]);
