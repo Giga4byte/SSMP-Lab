@@ -1,4 +1,5 @@
 .model small
+.stack 100h
 .data
 a dw 3027h
 b dw 40FAh
