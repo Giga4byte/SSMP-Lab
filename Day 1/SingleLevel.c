@@ -1,5 +1,3 @@
-// single directory
-
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -14,17 +12,28 @@ struct node *head, *tail, *ptr, *prev, *p;
 void insert () {
 	p = (struct node*)malloc(sizeof(struct node));
 	
-	printf ("Enter the file name: ");
-	scanf (" %s", p->fname);
+	printf("Enter file name: ");
+	scanf(" %s", p->fname);
 	p->next = NULL;
 	
 	if (head == NULL) {
 		head = p;
 		tail = p;
 	} else {
+		ptr = head;
+		while (ptr != NULL) {
+			if (strcmp(ptr->fname, p->fname) == 0) {
+				printf("No duplicates, terminated...\n");
+				free(p);
+				return;
+			}
+			ptr = ptr->next;
+		}
 		tail->next = p;
 		tail = p;
 	}
+	
+	printf("File entered successfully...\n");
 }
 
 void display () {
@@ -87,7 +96,6 @@ int main () {
 		
 		switch(choice) {
 			case 1: insert();
-					printf ("File has been created successfully...\n");
 					break;
 					
 			case 2: delete();
