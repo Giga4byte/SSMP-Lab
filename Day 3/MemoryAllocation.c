@@ -61,7 +61,52 @@ void insert(int totalMem, int frameSize, int totalFrames, int status[]) {
     printf("\nInternal fragmentation: %d KB\n", p->fragmentation);
 }
 
+void delete (int status[]) {
+    char processName[20];
+    printf("Enter the process name to delete: ");
+    scanf(" %s", processName);
+
+    ptr = head;
+    struct node *prev = NULL;
+
+    while (ptr != NULL) {
+        if (strcmp(ptr->name, processName) == 0) {
+            for (int i = 0; i < (ptr->size / frameSize) + (ptr->size % frameSize != 0 ? 1 : 0); i++) {
+                status[ptr->frames[i]] = 0;
+            }
+            remFrames += (ptr->size / frameSize) + (ptr->size % frameSize != 0 ? 1 : 0); // Update remaining frames
+
+            if (prev == NULL) {
+                head = ptr->next;
+            } else {
+                prev->next = ptr->next;
+            }
+
+            if (ptr == tail) {
+                tail = prev;
+            }
+
+            free(ptr);
+            printf("Process %s has been deleted.\n", processName);
+            return;
+        }
+        prev = ptr;
+        ptr = ptr->next;
+    }
+    printf("Process %s not found.\n", processName);
+}
+
+/*void totalFrag() {
+	int totalFragmentation = 0;
+	ptr = head;
+	while (ptr != NULL) {
+		totalFragmentation += ptr->fragmentation;
+	}
+	printf("\nTOTAL FRAGMENTATION = %d\n", totalFragmentation);
+}*/
+
 void display() {
+	int totalFragmentation = 0;
     ptr = head;
     if (ptr == NULL) {
         printf("No processes in memory.\n");
@@ -74,9 +119,11 @@ void display() {
                 printf("%d ", ptr->frames[i]);
             }
             printf("- Internal Fragmentation: %d KB\n", ptr->fragmentation);
+            totalFragmentation += ptr->fragmentation;
             ptr = ptr->next;
         }
     }
+    printf ("TOTAL FRAGMENTATION = %d\n", totalFragmentation);
 }
 
 int main() {
@@ -100,7 +147,7 @@ int main() {
     }
 
     while (1) {
-        printf("\nMENU\n1. Insert Process\n2. Display Memory Allocation\n3. Exit\n");
+        printf("\nMENU\n1. Insert Process\n2. Delete Process\n3. Display Memory Allocation\n4. Exit\n");
         printf("Enter your choice: ");
         scanf("%d", &choice);
 
@@ -109,9 +156,12 @@ int main() {
                 insert(totalMem, frameSize, totalFrames, status);
                 break;
             case 2:
-                display();
-                break;
+            	delete(status);
+            	break;
             case 3:
+                display(); 
+                break;
+            case 4:
                 printf("Terminating...\n");
                 return 0;
             default:
