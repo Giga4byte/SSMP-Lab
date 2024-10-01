@@ -132,24 +132,27 @@ void deleteDir() {
     }
 }
 
-void search () {
+void search (char mainDir[5]) {
 	char filename[20];
 	printf ("Enter the file to search: ");
 	scanf (" %s", filename);
 	
 	ptr = head;
 	
-	while ((ptr != NULL) && (strcmp(filename,ptr->fname) != 0)) {
+	while ((ptr != NULL)) {
         prev = ptr;
-        ptr = ptr->next;
-    }
-    
-    if (strcmp(filename, ptr->fname) == 0) {
-    	printf ("root/%s/%s\n", ptr->dname, ptr->fname);
+        if (strcmp(filename, ptr->fname) == 0) {
+    		printf ("%s/%s/%s\n", mainDir, ptr->dname, ptr->fname);
+   		}
+   		ptr = ptr->next;
     }
 }
 
 int main () {
+	char mainDir[5];
+	printf ("Enter the main directory: ");
+	scanf (" %s", mainDir);
+	
 	head = NULL; tail = NULL;
 	int choice = -1;
 	char file[20], directory[20];
@@ -172,7 +175,7 @@ int main () {
 			        //printf ("Directory has been deleted successfully...\n");
 					break;
 					
-			case 4: search(); 
+			case 4: search(mainDir); 
 					break;
 					
 			case 5: display();
