@@ -6,7 +6,7 @@
 struct node {
     char name[30];
     int blocks;
-    int allocatedBlocks[20];  // Adjust size if needed
+    int allocatedBlocks[20];
     struct node *next;
 };
 struct node *head, *tail, *ptr, *p;
