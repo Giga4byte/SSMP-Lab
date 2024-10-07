@@ -1,93 +1,122 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
+#include <stdlib.h>
 
-void writeSymbolTable(char label[], int locctr) {
-    FILE *symtab = fopen("symtab.txt", "a");
-    if (!symtab) {
-        printf("Error opening symtab.txt\n");
-        return;
+// Function to convert string to integer
+int str_to_int(const char *str) {
+    int num = 0;
+    int sign = 1;
+
+    // Check for negative sign
+    if (*str == '-') {
+        sign = -1;
+        str++;
     }
-    fprintf(symtab, "%s %04X\n", label, locctr); // Write label and location counter
-    fclose(symtab);
+
+    // Convert string to integer
+    while (*str >= '0' && *str <= '9') {
+        num = num * 10 + (*str - '0');
+        str++;
+    }
+
+    return sign * num;
 }
 
-int searchOpcode(char opcode[], int *size) {
-    FILE *optab = fopen("optab.txt", "r");
-    char op[10];
-    int sz;
+void passOne() {
+    char label[10], opcode[10], operand[10], code[10], mnemonic[3];
+    int locctr, start, length;
+    
+    FILE *fp1 = fopen("source.txt", "r");
+    FILE *fp2 = fopen("optab.txt", "r"); 
+    FILE *fp3 = fopen("symtab.txt", "w");
+    FILE *fp4 = fopen("intermediate.txt", "w");
+    FILE *fp5 = fopen("length.txt", "w"); 
 
-    if (!optab) {
-        printf("Error opening optab.txt\n");
-        return 0;
+    if (!fp1 || !fp2 || !fp3 || !fp4 || !fp5) {
+        fprintf(stderr, "Error opening files.\n");
+        exit(EXIT_FAILURE);
     }
 
-    while (fscanf(optab, "%s %d", op, &sz) != EOF) {
-        if (strcmp(op, opcode) == 0) {
-            *size = sz;
-            fclose(optab);
-            return 1;
-        }
+    // Read first line
+    if (fscanf(fp1, "%s\t%s\t%s", label, opcode, operand) != 3) {
+        fprintf(stderr, "Error reading input file.\n");
+        exit(EXIT_FAILURE);
     }
 
-    fclose(optab);
-    return 0;
-}
-
-void processing() {
-    FILE *source = fopen("source.txt", "r");
-    FILE *intermediate = fopen("intermediate.txt", "w");
-    if (!source || !intermediate) {
-        printf("can't open the files...\n");
-        return;
-    }
-
-    char label[10], opcode[10], operand[10];
-    int startAddr = 0, locctr = 0, size = 0;
-
-    fscanf(source, "%s\t%s\t%s", label, opcode, operand);
-
+    // Check if the first opcode is 'START'
     if (strcmp(opcode, "START") == 0) {
-        startAddr = (int)strtol(operand, NULL, 16); // string to long int
-        locctr = startAddr;
-        fprintf(intermediate, "%04X\t%s\t%s\t%s\n", locctr, label, opcode, operand); 
-        fscanf(source, "%s\t%s\t%s", label, opcode, operand);
+        start = str_to_int(operand);
+        locctr = start;
+        fprintf(fp4, "\t%s\t%s\t%s\n", label, opcode, operand);
+        if (fscanf(fp1, "%s\t%s\t%s", label, opcode, operand) != 3) {
+            fprintf(stderr, "Error reading input file.\n");
+            exit(EXIT_FAILURE);
+        }
     } else {
         locctr = 0;
     }
 
+    // Process each line until 'END' is encountered
     while (strcmp(opcode, "END") != 0) {
-        fprintf(intermediate, "%04X\t%s\t%s\t%s\n", locctr, label, opcode, operand);
-        
+        fprintf(fp4, "%d\t%s\t%s\t%s\n", locctr, label, opcode, operand);
         if (strcmp(label, "-") != 0) {
-            writeSymbolTable(label, locctr);
+            fprintf(fp3, "%s\t%d\n", label, locctr);
         }
 
-        if (searchOpcode(opcode, &size)) {
-            locctr += size;
-        } 
-        else if (strcmp(opcode, "WORD") == 0) {
-            locctr += 3;
-        } else if (strcmp(opcode, "BYTE") == 0) {
-            if (operand[0] == 'C') {
-                locctr += strlen(operand) - 3; 
-            } else if (operand[0] == 'X') {
-                locctr += (strlen(operand) - 3) / 2;
+        // Search the opcode in optab
+        rewind(fp2);
+        char found_opcode = 0;
+        fscanf(fp2, "%s\t%s", code, mnemonic);
+        while (!feof(fp2)) {
+            if (strcmp(opcode, code) == 0) {
+                locctr += 3;
+                found_opcode = 1;
+                break;
             }
-        } else {
-            printf("invalid opcode %s...\n", opcode);
+            fscanf(fp2, "%s\t%s", code, mnemonic);
         }
-        fscanf(source, "%s %s %s", label, opcode, operand);
+
+        // Handle directives (WORD, BYTE, RESW, RESB)
+        if (!found_opcode) {
+            if (strcmp(opcode, "WORD") == 0) {
+                locctr += 3;
+            } else if (strcmp(opcode, "RESW") == 0) {
+                locctr += (3 * str_to_int(operand));
+            } else if (strcmp(opcode, "RESB") == 0) {
+                locctr += str_to_int(operand);
+            } else if (strcmp(opcode, "BYTE") == 0) {
+                if (operand[0] == 'C') {
+                    locctr += (strlen(operand) - 3);
+                } else if (operand[0] == 'X') {
+                    locctr += (strlen(operand) - 3) / 2; 
+                }
+            } else if (opcode[0] == '+') {
+                locctr += 4;
+            }
+        }
+
+        // Read the next line
+        if (fscanf(fp1, "%s\t%s\t%s", label, opcode, operand) != 3) { break; }
     }
 
-    fprintf(intermediate, "%04X\t%s\t%s\t%s\n", locctr, label, opcode, operand);
+    // Write final 'END' to intermediate file
+    fprintf(fp4, "%d\t%s\t%s\t%s\n", locctr, label, opcode, operand);
 
-    fclose(source);
-    fclose(intermediate);
+    // Calculate program length and write to length file
+    length = locctr - start;
+    fprintf(fp5, "%d", length);
+
+    // Close all files
+    fclose(fp1);
+    fclose(fp2);
+    fclose(fp3);
+    fclose(fp4);
+    fclose(fp5);
+
+    printf("\nProgram Size = %d\n", length);
 }
 
 int main() {
-    processSourceFile();
-    printf("Pass 1 complete.\n");
+    passOne();
     return 0;
 }
