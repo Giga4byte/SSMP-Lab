@@ -5,21 +5,23 @@
 // Function to convert string to integer
 int str_to_int(const char *str) {
     int num = 0;
-    int sign = 1;
-
-    // Check for negative sign
-    if (*str == '-') {
-        sign = -1;
+    
+    // Convert string to integer (hexadecimal)
+    if (str[0] == '0' && (str[1] == 'x' || str[1] == 'X')) {
+        str += 2; // Skip the "0x" prefix
+    }
+    
+    while ((*str >= '0' && *str <= '9') || (*str >= 'A' && *str <= 'F') || (*str >= 'a' && *str <= 'f')) {
+        if (*str >= '0' && *str <= '9') {
+            num = (num << 4) + (*str - '0');
+        } else if (*str >= 'A' && *str <= 'F') {
+            num = (num << 4) + (*str - 'A' + 10);
+        } else {
+            num = (num << 4) + (*str - 'a' + 10);
+        }
         str++;
     }
-
-    // Convert string to integer
-    while (*str >= '0' && *str <= '9') {
-        num = num * 10 + (*str - '0');
-        str++;
-    }
-
-    return sign * num;
+    return num;
 }
 
 void passOne() {
@@ -42,8 +44,8 @@ void passOne() {
         fprintf(stderr, "Error reading input file.\n");
         exit(EXIT_FAILURE);
     }
-
-    // Check if the first opcode is 'START'
+    
+    // Check if the first opcode is START
     if (strcmp(opcode, "START") == 0) {
         start = str_to_int(operand);
         locctr = start;
@@ -56,14 +58,13 @@ void passOne() {
         locctr = 0;
     }
 
-    // Process each line until 'END' is encountered
+    // Process all lines until END
     while (strcmp(opcode, "END") != 0) {
-        fprintf(fp4, "%d\t%s\t%s\t%s\n", locctr, label, opcode, operand);
+        fprintf(fp4, "%X\t%s\t%s\t%s\n", locctr, label, opcode, operand);
         if (strcmp(label, "-") != 0) {
-            fprintf(fp3, "%s\t%d\n", label, locctr);
+            fprintf(fp3, "%s\t%X\n", label, locctr);
         }
-
-        // Search the opcode in optab
+        // Search opcode
         rewind(fp2);
         char found_opcode = 0;
         fscanf(fp2, "%s\t%s", code, mnemonic);
@@ -75,8 +76,7 @@ void passOne() {
             }
             fscanf(fp2, "%s\t%s", code, mnemonic);
         }
-
-        // Handle directives (WORD, BYTE, RESW, RESB)
+        // Handle directives - WORD, BYTE, RESW, RESB
         if (!found_opcode) {
             if (strcmp(opcode, "WORD") == 0) {
                 locctr += 3;
@@ -94,26 +94,25 @@ void passOne() {
                 locctr += 4;
             }
         }
-
-        // Read the next line
-        if (fscanf(fp1, "%s\t%s\t%s", label, opcode, operand) != 3) { break; }
+        // Read next line
+        if (fscanf(fp1, "%s\t%s\t%s", label, opcode, operand) != 3) 
+        { break; }
     }
 
-    // Write final 'END' to intermediate file
-    fprintf(fp4, "%d\t%s\t%s\t%s\n", locctr, label, opcode, operand);
+    // Write final END
+    fprintf(fp4, "%X\t%s\t%s\t%s\n", locctr, label, opcode, operand);
 
-    // Calculate program length and write to length file
+    // Calculate program length
     length = locctr - start;
-    fprintf(fp5, "%d", length);
+    fprintf(fp5, "%X", length);
 
-    // Close all files
     fclose(fp1);
     fclose(fp2);
     fclose(fp3);
     fclose(fp4);
     fclose(fp5);
 
-    printf("\nProgram Size = %d\n", length);
+    printf("\nProgram Size = %X\n", length);
 }
 
 int main() {
