@@ -2,77 +2,95 @@
 #include <string.h>
 #include <stdlib.h>
 
+#define MAX_OBJECT_CODE_LENGTH 100
+
 // Function to convert string to integer
 int str_to_int(const char *str) {
     int num = 0;
-    int sign = 1;
-    if (*str == '-') {
-        sign = -1;
+
+    if (str[0] == '0' && (str[1] == 'x' || str[1] == 'X')) {
+        str += 2; // Skip the "0x" prefix
+    }
+
+    while ((*str >= '0' && *str <= '9') || (*str >= 'A' && *str <= 'F') || (*str >= 'a' && *str <= 'f')) {
+        if (*str >= '0' && *str <= '9') {
+            num = (num << 4) + (*str - '0');
+        } else if (*str >= 'A' && *str <= 'F') {
+            num = (num << 4) + (*str - 'A' + 10);
+        } else {
+            num = (num << 4) + (*str - 'a' + 10);
+        }
         str++;
     }
-    while (*str >= '0' && *str <= '9') {
-        num = num * 10 + (*str - '0');
-        str++;
-    }
-    return sign * num;
+    return num;
 }
 
-// Function to find the address of a symbol in the symbol table
-int get_symbol_address(const char *symbol) {
-    char sym[10];
-    int address;
-
+// Function to search the symbol table for the address of a label
+int get_symbol_address(const char *label) {
     FILE *fp = fopen("symtab.txt", "r");
-    if (fp == NULL) {
-        fprintf(stderr, "Error opening symtab.txt.\n");
-        exit(EXIT_FAILURE);
-    }
+    char sym[10];
+    int addr;
 
-    while (fscanf(fp, "%s\t%d", sym, &address) != EOF) {
-        if (strcmp(sym, symbol) == 0) {
+    while (fscanf(fp, "%s\t%X\n", sym, &addr) != EOF) {
+        if (strcmp(sym, label) == 0) {
             fclose(fp);
-            return address;
+            return addr;
         }
     }
-
     fclose(fp);
-    return -1; // if not found
+    return -1; // Label not found
 }
 
+// Function to process Pass Two
 void passTwo() {
-    char label[10], opcode[10], operand[10];
-    int locctr;
+    char label[10], opcode[10], operand[10], object_code[MAX_OBJECT_CODE_LENGTH];
+    int locctr, start_addr, length;
     FILE *fp1 = fopen("intermediate.txt", "r");
-    FILE *fp2 = fopen("objectcode.txt", "w");
+    FILE *fp2 = fopen("objpgm.txt", "w");
 
-    // Check if files opened successfully
     if (!fp1 || !fp2) {
         fprintf(stderr, "Error opening files.\n");
         exit(EXIT_FAILURE);
     }
 
-    // Read the intermediate file
-    while (fscanf(fp1, "%d\t%s\t%s\t%s", &locctr, label, opcode, operand) != EOF) {
-        char object_code[20];
-        if (opcode[0] == '+') {
-            int address = get_symbol_address(operand);
+    // Read the first line for starting address
+    fscanf(fp1, "%d\t%s\t%s\t%s\n", &locctr, label, opcode, operand);
+    start_addr = locctr;
+
+    // Write header record
+    fprintf(fp2, "H %s %06X %06X\n", label, start_addr, length);
+
+    // Text record
+    fprintf(fp2, "T %06X ", locctr);
+    int text_length = 0; // To count the length of object code
+
+    // Process lines until END
+    while (strcmp(opcode, "END") != 0) {
+        // Skip empty labels
+        if (strcmp(label, "-") != 0) {
+            int address = get_symbol_address(operand); // Get address for operand
+
+            // Handle object code generation
             if (address != -1) {
-                sprintf(object_code, "%s%03X", opcode + 1, address);
-                fprintf(fp2, "%d\t%s\t%s\t%s\n", locctr, label, opcode, object_code);
-            }
-        } else { 
-            int address = get_symbol_address(operand);
-            if (address != -1) {
-                sprintf(object_code, "%s%03X", opcode, address);
-                fprintf(fp2, "%d\t%s\t%s\t%s\n", locctr, label, opcode, object_code);
+                // Assume opcode has been set accordingly in previous pass
+                sprintf(object_code, "%s%03X", opcode + 1, address); // Creating object code
+                fprintf(fp2, "%s", object_code); // Write object code to text record
+                text_length += strlen(object_code) / 2; // Update text length (2 chars per byte)
             }
         }
+        // Read next line
+        fscanf(fp1, "%d\t%s\t%s\t%s\n", &locctr, label, opcode, operand);
     }
 
-    // Close all files
+    // Finalize the text record
+    fprintf(fp2, "\n");
+
+    // Write end record
+    fprintf(fp2, "E %06X\n", start_addr);
+
+    // Close files
     fclose(fp1);
     fclose(fp2);
-    printf("Object code generated in objectcode.txt\n");
 }
 
 int main() {
