@@ -1,96 +1,100 @@
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
-#define MAX_OBJECT_CODE_LENGTH 100
-
-// Function to convert string to integer
-int str_to_int(const char *str) {
-    int num = 0;
-
-    if (str[0] == '0' && (str[1] == 'x' || str[1] == 'X')) {
-        str += 2; // Skip the "0x" prefix
+int searchOptab(char opcode[], char objCode[]) {
+    FILE *fp = fopen("optab.txt", "r");
+    char code[10], mnemonic[10];
+    if (!fp) {
+        printf("Error opening optab.txt\n");
+        return 0;
     }
-
-    while ((*str >= '0' && *str <= '9') || (*str >= 'A' && *str <= 'F') || (*str >= 'a' && *str <= 'f')) {
-        if (*str >= '0' && *str <= '9') {
-            num = (num << 4) + (*str - '0');
-        } else if (*str >= 'A' && *str <= 'F') {
-            num = (num << 4) + (*str - 'A' + 10);
-        } else {
-            num = (num << 4) + (*str - 'a' + 10);
-        }
-        str++;
-    }
-    return num;
-}
-
-// Function to search the symbol table for the address of a label
-int get_symbol_address(const char *label) {
-    FILE *fp = fopen("symtab.txt", "r");
-    char sym[10];
-    int addr;
-
-    while (fscanf(fp, "%s\t%X\n", sym, &addr) != EOF) {
-        if (strcmp(sym, label) == 0) {
+    while (fscanf(fp, "%s\t%s", code, mnemonic) != EOF) {
+        if (strcmp(opcode, code) == 0) {
+            strcpy(objCode, mnemonic);
             fclose(fp);
-            return addr;
+            return 1;
         }
     }
     fclose(fp);
-    return -1; // Label not found
+    return 0;
 }
 
-// Function to process Pass Two
+int searchSymtab(char symbol[], int *address) {
+    FILE *fp = fopen("symtab.txt", "r");
+    char label[10];
+    int loc;
+    if (!fp) {
+        printf("Error opening symtab.txt\n");
+        return 0;
+    }
+    while (fscanf(fp, "%s\t%X", label, &loc) != EOF) {
+        if (strcmp(symbol, label) == 0) {
+            *address = loc;
+            fclose(fp);
+            return 1;
+        }
+    }
+    fclose(fp);
+    return 0;
+}
+
 void passTwo() {
-    char label[10], opcode[10], operand[10], object_code[MAX_OBJECT_CODE_LENGTH];
-    int locctr, start_addr, length;
+    char label[10], opcode[10], operand[10], objCode[10];
+    int address, locctr;
     FILE *fp1 = fopen("intermediate.txt", "r");
     FILE *fp2 = fopen("objpgm.txt", "w");
-
+    
     if (!fp1 || !fp2) {
-        fprintf(stderr, "Error opening files.\n");
-        exit(EXIT_FAILURE);
+        printf("Error opening files\n");
+        exit(1);
     }
 
-    // Read the first line for starting address
-    fscanf(fp1, "%d\t%s\t%s\t%s\n", &locctr, label, opcode, operand);
-    start_addr = locctr;
-
-    // Write header record
-    fprintf(fp2, "H %s %06X %06X\n", label, start_addr, length);
-
-    // Text record
-    fprintf(fp2, "T %06X ", locctr);
-    int text_length = 0; // To count the length of object code
-
-    // Process lines until END
+    fscanf(fp1, "\t%s\t%s\t%s", label, opcode, operand);
+    if (strcmp(opcode, "START") == 0) {
+        fprintf(fp2, "H^%s^%06X\n", label, strtol(operand, NULL, 16));
+        fscanf(fp1, "%X\t%s\t%s\t%s", &locctr, label, opcode, operand);
+    }
+    
+    fprintf(fp2, "T^%06X^", locctr);  
+    
     while (strcmp(opcode, "END") != 0) {
-        // Skip empty labels
-        if (strcmp(label, "-") != 0) {
-            int address = get_symbol_address(operand); // Get address for operand
-
-            // Handle object code generation
-            if (address != -1) {
-                // Assume opcode has been set accordingly in previous pass
-                sprintf(object_code, "%s%03X", opcode + 1, address); // Creating object code
-                fprintf(fp2, "%s", object_code); // Write object code to text record
-                text_length += strlen(object_code) / 2; // Update text length (2 chars per byte)
+        if (searchOptab(opcode, objCode)) {
+            fprintf(fp2, "^%s", objCode); 
+            
+            if (strcmp(operand, "-") != 0) {
+                if (searchSymtab(operand, &address)) {
+                    fprintf(fp2, "%04X", address); 
+                } else {
+                    printf("Error: Undefined symbol %s\n", operand);
+                }
+            } else {
+                fprintf(fp2, "0000");
+            }
+        } else {
+            if (strcmp(opcode, "WORD") == 0) {
+                fprintf(fp2, "^%06X", strtol(operand, NULL, 16));
+            } else if (strcmp(opcode, "BYTE") == 0) {
+                if (operand[0] == 'C') {
+                    for (int i = 2; operand[i] != '\''; i++) {
+                        fprintf(fp2, "^%02X", operand[i]);
+                    }
+                } else if (operand[0] == 'X') {
+                    fprintf(fp2, "^%02X", (int)strtol(operand + 2, NULL, 16));
+                }
             }
         }
-        // Read next line
-        fscanf(fp1, "%d\t%s\t%s\t%s\n", &locctr, label, opcode, operand);
+
+        if (fscanf(fp1, "%X\t%s\t%s\t%s", &locctr, label, opcode, operand) != 4) {
+            break;
+        }
     }
 
-    // Finalize the text record
-    fprintf(fp2, "\n");
-
-    // Write end record
-    fprintf(fp2, "E %06X\n", start_addr);
-
-    // Close files
+    fprintf(fp2, "\nE^%06X\n", locctr);
+    
     fclose(fp1);
     fclose(fp2);
+    printf("Object program generated successfully.\n");
 }
 
 int main() {
