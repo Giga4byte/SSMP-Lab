@@ -11,8 +11,18 @@
   mov ds,ax
   mov si,offset a
   mov al,[si]
+    ;display al
+     mov dl, al
+     add dl, 30h
+     mov ah, 02h
+     int 21h
   mov si,offset b
   mov bl,[si]
+    ;display bl
+     mov dl, bl
+     add dl, 30h
+     mov ah, 02h
+     int 21h
   mov si,offset c1
   mov cx,[si]
   mov si,offset d
