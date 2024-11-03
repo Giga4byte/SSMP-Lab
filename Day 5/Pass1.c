@@ -8,7 +8,7 @@ int str_to_int(const char *str) {
     
     // Convert string to integer (hexadecimal)
     if (str[0] == '0' && (str[1] == 'x' || str[1] == 'X')) {
-        str += 2; // Skip the "0x" prefix
+        str += 2;
     }
     
     while ((*str >= '0' && *str <= '9') || (*str >= 'A' && *str <= 'F') || (*str >= 'a' && *str <= 'f')) {
