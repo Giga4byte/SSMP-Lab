@@ -1,4 +1,4 @@
-// absolute different
+// absolute loader
 #include<stdio.h>
 #include<string.h>
 #include<stdlib.h>
