@@ -3,10 +3,10 @@
 #include <string.h>
 
 void main() {
-    int prog_len, length, objc_len, text_rec_len = 0, text_rec_addr;
-    char start_addr[10], loc[10], label[10], opcode[10], operand[10];
+    int prog_len, length, objc_len, text_rec_len = 0, addr;
+    char start[10], loc[10], label[10], opcode[10], operand[10];
     char opc[10], val[10], sym_name[10], sym_addr[10];
-    char text_header[10], obj_code[100] = "", temp_objc[100];
+    char text_header[10], obj_code[100] = "", temp_objc[100] = "";
     
     FILE *intermediate_ptr = fopen("intermediatefile.txt", "r");
     FILE *optab_ptr = fopen("OPTAB.txt", "r");
@@ -21,19 +21,19 @@ void main() {
 
     fscanf(intermediate_ptr, "%s %s %s %s", loc, label, opcode, operand);
     if (strcmp(opcode, "START") == 0) {
-        strcpy(start_addr, operand);
-        text_rec_addr = (int)strtol(start_addr, NULL, 16);
+        strcpy(start, operand);
+        addr = (int)strtol(start, NULL, 16);
         fscanf(size_ptr, "%x", &prog_len);
     }
 
-    printf("H^%s^%06X^%06X\n", label, (int)strtol(start_addr, NULL, 16), prog_len);
-    fprintf(object_ptr, "H^%s^%06X^%06X\n", label, (int)strtol(start_addr, NULL, 16), prog_len);
-    snprintf(text_header, sizeof(text_header), "T^%06X", text_rec_addr);
+    // print header record to file
+    fprintf(object_ptr, "H^%s^%06X^%06X\n", label, (int)strtol(start, NULL, 16), prog_len);
+    
+    snprintf(text_header, sizeof(text_header), "T^%06X", addr);
 
     while (strcmp(opcode, "END") != 0) {
-        fscanf(intermediate_ptr, "%s %d %s %s %s", loc, &length, label, opcode, operand);
+        fscanf(intermediate_ptr, "%s %s %s %s", loc, label, opcode, operand);
         objc_len = 0;
-        strcpy(temp_objc, "");
         int opcode_found = 0;
         fseek(optab_ptr, 0, SEEK_SET);
 
