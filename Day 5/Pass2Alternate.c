@@ -66,15 +66,16 @@ void main() {
             }
             objc_len--;
         }
+        
         if (strcmp(opcode, "WORD") == 0) {
             snprintf(temp_objc, sizeof(temp_objc), "^%06X", (int)strtol(operand, NULL, 10));
             objc_len = 3;
         }
+        
         if (text_rec_len + objc_len <= 9) {
             text_rec_len += objc_len;
             strcat(obj_code, temp_objc);
         } else {
-            printf("%s^%02X%s\n", text_header, text_rec_len, obj_code);
             fprintf(object_ptr, "%s^%02X%s\n", text_header, text_rec_len, obj_code);
             text_rec_addr += text_rec_len;
             text_rec_len = objc_len;
