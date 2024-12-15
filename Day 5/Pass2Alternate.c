@@ -7,6 +7,7 @@ void main() {
     char start_addr[10], loc[10], label[10], opcode[10], operand[10];
     char opc[10], val[10], sym_name[10], sym_addr[10];
     char text_header[10], obj_code[100] = "", temp_objc[100];
+    
     FILE *intermediate_ptr = fopen("intermediatefile.txt", "r");
     FILE *optab_ptr = fopen("OPTAB.txt", "r");
     FILE *symtab_ptr = fopen("symtab.txt", "r");
@@ -18,7 +19,7 @@ void main() {
         exit(1);
     }
 
-    fscanf(intermediate_ptr, "%s %d %s %s %s", loc, &length, label, opcode, operand);
+    fscanf(intermediate_ptr, "%s %s %s %s", loc, label, opcode, operand);
     if (strcmp(opcode, "START") == 0) {
         strcpy(start_addr, operand);
         text_rec_addr = (int)strtol(start_addr, NULL, 16);
