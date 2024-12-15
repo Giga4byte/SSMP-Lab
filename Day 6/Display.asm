@@ -26,7 +26,7 @@ access:
     mov dl, [si] 
     cmp dl, '$'
     jz exiting    
-    mov ah, 02h
+    mov ah, 09h
     int 21h     
     inc si   
     jmp access           
