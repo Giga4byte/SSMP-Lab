@@ -1,48 +1,42 @@
-.MODEL SMALL
-.DATA
-MSG DB "HELLO WORLD$"
-MSG1 DB "CHARACTER PRESENT$"
-MSG2 DB "CHARACTER NOT PRESENT$"
-MSG3 DB 10,13,'$'
-INS DB "Insert Letter: $"
-
-
-.CODE
-MOV AX, @DATA
-MOV DS, AX
-
-LEA SI,MSG
-
-LEA DX, INS
-MOV AH,09h
-INT 21h
-
-MOV AH,01h
-INT 21h
-
-LEA DX, MSG3
-MOV AH,09h
-INT 21h
-
-MOV BL,'$'
-
-UP: CMP BL,[SI]
-JZ EXIT
-CMP AL,[SI]
-JZ PRINT
-INC SI
-JMP UP
-
-PRINT: LEA DX, MSG1
-MOV AH,09h
-INT 21h
-MOV AH,4Ch
-INT 21h
-
-EXIT: LEA DX, MSG2
-MOV AH,09h
-INT 21h
-MOV AH,4Ch
-INT 21h
-
-END
+.model small
+.data
+    msg db "HELLO WORLD$"
+    msg1 db "character present$"
+    msg2 db "character not present$"
+    msg3 db 10,13,'$'
+    ins db "check letter: $"
+.code
+    mov ax, @data
+    mov ds, ax
+    lea si, msg
+    
+    lea dx, ins
+    mov ah, 09h
+    int 21h
+    mov ah, 01h
+    int 21h
+    lea dx, msg3
+    mov ah, 09h
+    int 21h
+    
+    mov bl, '$'
+    
+    up: cmp bl, [si]
+        jz exit
+        cmp al, [si]
+        jz print
+        inc si
+        jmp up
+    
+    print: lea dx, msg1
+           mov ah, 09h
+           int 21h
+           mov ah, 4ch
+           int 21h
+    
+    exit: lea dx, msg2
+          mov ah, 09h
+          int 21h
+          mov ah, 4ch
+          int 21h
+end
