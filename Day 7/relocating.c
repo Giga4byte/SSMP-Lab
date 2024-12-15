@@ -64,12 +64,9 @@ int main() {
                 if (binary_mask[mask_index] == '1') {
                     operand += start_addr; // Relocate operand if bit is 1
                 }
-
                 printf("\n%06x\t\t\t%02x%04x", address, opcode, operand);
                 address += 3;
                 mask_index++;
-
-
                 if (getc(fp) == '$') {
                     break;
                 }
