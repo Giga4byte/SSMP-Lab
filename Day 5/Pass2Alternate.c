@@ -36,13 +36,13 @@ void main() {
         objc_len = 0;
         int opcode_found = 0;
         fseek(optab_ptr, 0, SEEK_SET);
-
+        
         while (fscanf(optab_ptr, "%s %s", opc, val) != EOF) {
-            char newopc[20] = "+";
+            char newopc[20] = "+"; // for modification record
             strcat(newopc, opc);
             if (strcmp(opcode, opc) == 0 || strcmp(opcode, newopc) == 0) {
                 int operand_found = 0;
-                fseek(symtab_ptr, 0, SEEK_SET);
+                fseek(symtab_ptr, 0, SEEK_SET); 
                 while (fscanf(symtab_ptr, "%s %s", sym_name, sym_addr) != EOF) {
                     if (strcmp(operand, sym_name) == 0) {
                         snprintf(temp_objc, sizeof(temp_objc), "^%s%s", val, sym_addr);
@@ -50,11 +50,12 @@ void main() {
                         operand_found = 1;
                         break;
                     }
-                }
+                } // inner while 2
                 if (operand_found) break;
                 opcode_found = 1;
             }
-        }
+        } // inner while 1
+        
         if (strcmp(opcode, "BYTE") == 0) {
             strcpy(temp_objc, "^");
             for (int i = 2; i < strlen(operand) - 1; i++) {
