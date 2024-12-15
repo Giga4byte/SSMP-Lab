@@ -48,13 +48,12 @@ int main() {
     printf("\nRelocated Address\tObject Code");
 
     fscanf(fp, "%s", col_one);
+    
     while (strcmp(col_one, "E") != 0) {
-
         if (strcmp(col_one, "H") == 0) {
             fscanf(fp, "%s %*s %*s", prog_name);  // Skip record address and length
             fscanf(fp, "%s", col_one);
         }
-
         if (strcmp(col_one, "T") == 0) {
             fscanf(fp, "%x %*x %s", &address, bitmask);
             address += start_addr;
